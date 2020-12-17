@@ -16,6 +16,7 @@
 #include <limits>
 
 #include "absl/strings/str_format.h"
+#include "ortools/base/strong_vector.h"
 #include "ortools/glop/revised_simplex.h"
 #include "ortools/glop/status.h"
 #include "ortools/lp_data/lp_data_utils.h"
