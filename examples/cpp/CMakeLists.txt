@@ -17,6 +17,7 @@ foreach(EXECUTABLE IN ITEMS
   cvrptw
   cvrptw_with_breaks
   cvrptw_with_refueling
+  my_vrp
   cvrptw_with_resources
   cvrptw_with_stop_times_and_resources
   dimacs_assignment

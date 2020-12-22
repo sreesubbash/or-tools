@@ -1421,6 +1421,7 @@ Solver::Solver(const std::string& name)
       demon_profiler_(BuildDemonProfiler(this)),
       use_fast_local_search_(true),
       local_search_profiler_(BuildLocalSearchProfiler(this)) {
+  //std::cout << "This was newly added by Subbash" << std::endl;
   Init();
 }
 
