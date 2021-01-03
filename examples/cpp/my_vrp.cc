@@ -1,5 +1,6 @@
 #include <cmath>
 #include <vector>
+#include <stdlib.h>
 
 #include "ortools/constraint_solver/routing.h"
 #include "ortools/constraint_solver/routing_enums.pb.h"
@@ -12,7 +13,7 @@ namespace operations_research {
 
 
 struct DataModel {
-  const std::vector<std::vector<int64>> distance_matrix{
+  std::vector<std::vector<int64>> distance_matrix; /*{
       {0, 548, 776, 696, 582, 274, 502, 194, 308, 194, 536, 502, 388, 354, 468,
        776, 662},
       {548, 0, 684, 308, 194, 502, 730, 354, 696, 742, 1084, 594, 480, 674,
@@ -47,7 +48,7 @@ struct DataModel {
        422, 764, 0, 798},
       {662, 1210, 754, 1358, 1244, 708, 480, 856, 514, 468, 354, 844, 730, 536,
        194, 798, 0},
-  };
+  };*/
     const std::vector<std::vector<RoutingIndexManager::NodeIndex>>
       pickups_deliveries{
           {RoutingIndexManager::NodeIndex{1},
@@ -67,12 +68,12 @@ struct DataModel {
           {RoutingIndexManager::NodeIndex{16},
            RoutingIndexManager::NodeIndex{14}},
       };
-  const int num_vehicles = 4;
-  const RoutingIndexManager::NodeIndex depot{0};
-  const std::vector<int64> demands{
+  int num_vehicles = 4;
+  RoutingIndexManager::NodeIndex depot{0};
+  std::vector<int64> demands{
     0, 1, 1, 2, 4, 2, 4, 8, 8, 1, 2, 1, 2, 4, 4, 8, 8,
   };
-  const std::vector<int64> vehicle_capacities{30, 30, 30, 30};
+  std::vector<int64> vehicle_capacities{30, 30, 30, 30};
 };
 
 
@@ -113,6 +114,32 @@ void VrpGlobalSpan() {
 
   // Instantiate the data problem.
   DataModel data;
+  
+  const int size = 17;
+  srand (42);
+  
+  for (int i = 0; i < size; i++) {
+    std::vector<int64> row;
+    for (int j = 0; j < size; j++) {
+      if (i == j) {
+        row.push_back(0);
+      } else if (i > j) {
+        row.push_back(data.distance_matrix[j][i]);
+      } else {
+        row.push_back(rand() % 1000);
+      }
+    }
+    data.distance_matrix.push_back(row);
+  }
+  
+  
+  
+  for (std::vector<int64> row : data.distance_matrix) {
+    for (int64 val : row) {
+      std::cout << val << " ";
+    }
+    std::cout << std::endl;
+  }
 
   // Create Routing Index Manager
   RoutingIndexManager manager(data.distance_matrix.size(), data.num_vehicles,
@@ -160,6 +187,7 @@ void VrpGlobalSpan() {
   Solver* const solver = routing.solver();
 
   // Define Transportation Requests.
+  /*
   for (const auto& request : data.pickups_deliveries) {
     int64 pickup_index = manager.NodeToIndex(request[0]);
     int64 delivery_index = manager.NodeToIndex(request[1]);
@@ -170,6 +198,7 @@ void VrpGlobalSpan() {
         solver->MakeLessOrEqual(distance_dimension->CumulVar(pickup_index),
                                 distance_dimension->CumulVar(delivery_index)));
   }
+  */
 
   // Setting first solution heuristic.
   RoutingSearchParameters searchParameters = DefaultRoutingSearchParameters();
@@ -177,22 +206,24 @@ void VrpGlobalSpan() {
   //    FirstSolutionStrategy::PARALLEL_CHEAPEST_INSERTION);
   searchParameters.set_first_solution_strategy(
       FirstSolutionStrategy::PATH_CHEAPEST_ARC);
-  searchParameters.set_local_search_metaheuristic(
-      LocalSearchMetaheuristic::GUIDED_LOCAL_SEARCH);
-  searchParameters.mutable_time_limit()->set_seconds(4);
+  //searchParameters.set_local_search_metaheuristic(
+  //    LocalSearchMetaheuristic::GUIDED_LOCAL_SEARCH);
+  //searchParameters.mutable_time_limit()->set_seconds(4);
   //searchParameters.set_log_search(true);
 
 
 
   // Solve the problem.
+  // std::cout << "next solution is" << routing.solver()->NextSolution() << std::endl;
+  
   const Assignment* solution = routing.SolveWithParameters(searchParameters);
 
   // Print solution on console.
   if (routing.status() == 1) {
     VRPPrintSolution(data, manager, routing, *solution);
-  } else {
-    std::cout << "solver status is :: " << routing.status() << std::endl;
   }
+  std::cout << "solver status is : " << routing.status() << std::endl;
+  std::cout << "number of solution found are: " << routing.solver()->solutions() << std::endl;
   
   // Check if solution is not nullptr first else it will have segmentation fault
   //std::cout << solution << std::endl;
