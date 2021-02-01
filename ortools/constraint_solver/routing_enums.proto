@@ -135,5 +135,6 @@ message LocalSearchMetaheuristic {
     // of variables to use must be provided via the SetTabuVarsCallback
     // callback.
     GENERIC_TABU_SEARCH = 5;
+    MY_META_SEARCH = 7;
   }
 }

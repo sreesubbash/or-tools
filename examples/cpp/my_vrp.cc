@@ -206,9 +206,10 @@ void VrpGlobalSpan() {
   //    FirstSolutionStrategy::PARALLEL_CHEAPEST_INSERTION);
   searchParameters.set_first_solution_strategy(
       FirstSolutionStrategy::PATH_CHEAPEST_ARC);
+    searchParameters.set_local_search_metaheuristic(LocalSearchMetaheuristic::MY_META_SEARCH);
   //searchParameters.set_local_search_metaheuristic(
   //    LocalSearchMetaheuristic::GUIDED_LOCAL_SEARCH);
-  //searchParameters.mutable_time_limit()->set_seconds(4);
+  searchParameters.mutable_time_limit()->set_seconds(5);
   //searchParameters.set_log_search(true);
 
 

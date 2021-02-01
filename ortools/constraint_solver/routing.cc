@@ -5403,6 +5403,9 @@ void RoutingModel::SetupMetaheuristics(
   const int64 optimization_step = std::max(
       MathUtil::FastInt64Round(search_parameters.optimization_step()), One());
   switch (metaheuristic) {
+    case LocalSearchMetaheuristic::MY_META_SEARCH:
+      optimize = solver_->MakeMyMetaSearch(false, cost_, optimization_step, 100);
+      break;
     case LocalSearchMetaheuristic::GUIDED_LOCAL_SEARCH:
       if (CostsAreHomogeneousAcrossVehicles()) {
         optimize = solver_->MakeGuidedLocalSearch(

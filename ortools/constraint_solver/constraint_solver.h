@@ -2176,6 +2176,10 @@ class Solver {
   SearchMonitor* MakeSimulatedAnnealing(bool maximize, IntVar* const v,
                                         int64 step, int64 initial_temperature);
 
+  /// Creates a My Meta Search monitor
+  SearchMonitor* MakeMyMetaSearch(bool maximize, IntVar* const v, int64 step,
+                                  int64 initial_temperature);
+
   /// Creates a Guided Local Search monitor.
   /// Description here: http://en.wikipedia.org/wiki/Guided_Local_Search
   SearchMonitor* MakeGuidedLocalSearch(bool maximize, IntVar* const objective,

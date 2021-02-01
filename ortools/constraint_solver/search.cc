@@ -3253,6 +3253,114 @@ SearchMonitor* Solver::MakeGenericTabuSearch(
       new GenericTabuSearch(this, maximize, v, step, tabu_vars, forbid_tenure));
 }
 
+// ---------- My MetaSearch ------------
+
+namespace {
+class MyMetaSearch : public Metaheuristic {
+ public:
+  MyMetaSearch(Solver* const s, bool maximize, IntVar* objective,
+                     int64 step, int64 initial_temperature);
+  ~MyMetaSearch() override {}
+  void EnterSearch() override;
+  void ApplyDecision(Decision* d) override;
+  bool AtSolution() override;
+  bool LocalOptimum() override;
+  void AcceptNeighbor() override;
+  std::string DebugString() const override { return "My Meta Search"; }
+
+ private:
+  double Temperature() const;
+
+  const int64 temperature0_;
+  int64 iteration_;
+  std::mt19937 rand_;
+  bool found_initial_solution_;
+
+  DISALLOW_COPY_AND_ASSIGN(MyMetaSearch);
+};
+
+MyMetaSearch::MyMetaSearch(Solver* const s, bool maximize,
+                                       IntVar* objective, int64 step,
+                                       int64 initial_temperature)
+    : Metaheuristic(s, maximize, objective, step),
+      temperature0_(initial_temperature),
+      iteration_(0),
+      rand_(CpRandomSeed()),
+      found_initial_solution_(false) {}
+
+void MyMetaSearch::EnterSearch() {
+  Metaheuristic::EnterSearch();
+  found_initial_solution_ = false;
+}
+
+void MyMetaSearch::ApplyDecision(Decision* const d) {
+  Solver* const s = solver();
+  if (d == s->balancing_decision()) {
+    return;
+  }
+  const double rand_double = absl::Uniform<double>(rand_, 0.0, 1.0);
+#if defined(_MSC_VER) || defined(__ANDROID__)
+  const double rand_log2_double = log(rand_double) / log(2.0L);
+#else
+  const double rand_log2_double = log2(rand_double);
+#endif
+  const int64 energy_bound = Temperature() * rand_log2_double;
+  if (maximize_) {
+    const int64 bound =
+        (current_ > kint64min) ? current_ + step_ + energy_bound : current_;
+    s->AddConstraint(s->MakeGreaterOrEqual(objective_, bound));
+  } else {
+    const int64 bound =
+        (current_ < kint64max) ? current_ - step_ - energy_bound : current_;
+    s->AddConstraint(s->MakeLessOrEqual(objective_, bound));
+  }
+}
+
+bool MyMetaSearch::AtSolution() {
+  if (!Metaheuristic::AtSolution()) {
+    return false;
+  }
+  found_initial_solution_ = true;
+  return true;
+}
+
+bool MyMetaSearch::LocalOptimum() {
+  if (maximize_) {
+    current_ = kint64min;
+  } else {
+    current_ = kint64max;
+  }
+  ++iteration_;
+  return found_initial_solution_ && Temperature() > 0;
+}
+
+void MyMetaSearch::AcceptNeighbor() {
+  if (iteration_ > 0) {
+    ++iteration_;
+  }
+}
+
+double MyMetaSearch::Temperature() const {
+  std::cout<< (1.0 * temperature0_) / iteration_ << std::endl;
+  if (iteration_ > 0) {
+    return (1.0 * temperature0_) / iteration_;  // Cauchy annealing
+  } else {
+    return 0.;
+  }
+}
+}  // namespace
+
+
+
+
+SearchMonitor* Solver::MakeMyMetaSearch(bool maximize, IntVar* const v,
+                                              int64 step,
+                                              int64 initial_temperature) {
+  return RevAlloc(
+      new MyMetaSearch(this, maximize, v, step, initial_temperature));
+}
+
+
 // ---------- Simulated Annealing ----------
 
 namespace {
@@ -3341,6 +3449,7 @@ void SimulatedAnnealing::AcceptNeighbor() {
 }
 
 double SimulatedAnnealing::Temperature() const {
+    std::cout<< (1.0 * temperature0_) / iteration_ << std::endl;
   if (iteration_ > 0) {
     return (1.0 * temperature0_) / iteration_;  // Cauchy annealing
   } else {
@@ -3889,6 +3998,7 @@ int64 TernaryGuidedLocalSearch::GetAssignmentSecondaryValue(
     return container.Element(secondary_var).Value();
   }
 }
+
 }  // namespace
 
 SearchMonitor* Solver::MakeGuidedLocalSearch(
